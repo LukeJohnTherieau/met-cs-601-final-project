@@ -2,9 +2,6 @@ import {NextResponse} from "next/server";
 import createJobApplication from "@/lib/createJobApplication";
 import { JobApplicationProps } from "@/types";
 
-// // Update the data everytime the page refreshes.
-// export const dynamic = "force-dynamic";
-
 
 export async function POST(request:Request): Promise<NextResponse>{
     const jobApplication: JobApplicationProps = await request.json();

@@ -2,17 +2,13 @@
 
 
 import getCollection, { JOB_APPLICATION_COLLECTION } from "@/db";
-import { JobApplicationProps, SubmissionStatusProps } from "@/types";
+import {SubmissionStatusProps} from "@/types";
+import {ObjectId} from "mongodb";
 
-
-export default async function deleteJobApplication(jobApplication: JobApplicationProps): Promise<SubmissionStatusProps> {
-  if (jobApplication._id) {
+export default async function deleteJobApplication(id: string): Promise<SubmissionStatusProps> {
+  if (id) {
     const jobApplicationCollection = await getCollection(JOB_APPLICATION_COLLECTION);
-    const res = await jobApplicationCollection.deleteOne(
-      { 
-        _id: jobApplication._id
-      }
-    );
+    const res = await jobApplicationCollection.deleteOne({_id: new ObjectId(id)});
     if (!res.acknowledged) {
       return {
         "successfulSubmission": false,

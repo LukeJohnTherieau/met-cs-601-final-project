@@ -3,9 +3,6 @@ import updateJobApplication from "@/lib/updateJobApplication";
 import {JobApplicationProps} from "@/types";
 import {ObjectId} from "mongodb";
 
-// // Update the data everytime the page refreshes.
-// export const dynamic = "force-dynamic";
-
 
 export async function PUT(request:Request): Promise<NextResponse>{
     const jobApplication: JobApplicationProps = await request.json();

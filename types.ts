@@ -1,5 +1,8 @@
+import {ObjectId} from "mongodb";
+
+
 export type JobApplicationProps = {
-    _id?: string;
+    _id?: ObjectId;
     title: string;
     dateApplied: Date;
     status: string;

@@ -1,4 +1,5 @@
 import {Collection, Db, MongoClient} from "mongodb";
+import { JobApplicationProps } from "@/types";
 
 const MONGO_URI = process.env.MONGO_URI as string;
 
@@ -8,7 +9,7 @@ if(!MONGO_URI){
 
 const DB_NAME = "met-cs-601";
 
-export const ALIAS_COLLECTION = "job-application-collection";
+export const JOB_APPLICATION_COLLECTION = "job-application-collection";
 
 let client: MongoClient | null=null;
 let db: Db | null=null;
@@ -25,11 +26,11 @@ async function connect(): Promise<Db> {
 }
 
 
-export default async function getCollection(collectionName: string): Promise<Collection> {
+export default async function getCollection(collectionName: string): Promise<Collection<JobApplicationProps>> {
     // If `db` is not yet initialized, call `connect` to establish the connection.
     if (!db) {
         db = await connect();
     }
     // Return the requested collection from the database.
-    return db.collection(collectionName);
+    return db.collection<JobApplicationProps>(collectionName);
 }

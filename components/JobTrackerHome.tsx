@@ -5,6 +5,8 @@ import useSWR from "swr";
 import useSWRMutation from "swr/mutation";
 import { JobApplicationProps } from "@/types";
 
+// API helpers
+
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 async function postApplication(
@@ -17,6 +19,19 @@ async function postApplication(
     body: JSON.stringify(arg),
   }).then((res) => res.json());
 }
+
+async function putApplication(
+  url: string,
+  { arg }: { arg: JobApplicationProps },
+) {
+  return fetch(url, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(arg),
+  }).then((res) => res.json());
+}
+
+// Status badge
 
 const statusStyles: Record<
   string,
@@ -51,6 +66,8 @@ function StatusBadge({ status }: { status: string }) {
     </span>
   );
 }
+
+// Empty state
 
 function EmptyState() {
   return (
@@ -99,15 +116,40 @@ function EmptyState() {
   );
 }
 
+// Edit icon
+
+function EditIcon() {
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#1559a8"
+      strokeWidth="2"
+    >
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+  );
+}
+
 // Main component
 
 export default function JobTrackerHome() {
   const API = "/api/job-applications";
 
-  // Fetch all applications
   const { data, error, mutate } = useSWR<JobApplicationProps[]>(API, fetcher);
-  const { trigger, isMutating } = useSWRMutation(API, postApplication);
+  const { trigger: createTrigger, isMutating: isCreating } = useSWRMutation(
+    API,
+    postApplication,
+  );
+  const { trigger: updateTrigger, isMutating: isUpdating } = useSWRMutation(
+    API,
+    putApplication,
+  );
 
+  // Add form state
   const [title, setTitle] = useState("");
   const [status, setStatus] = useState("applied");
   const [positionType, setPositionType] = useState("Full-time");
@@ -120,6 +162,68 @@ export default function JobTrackerHome() {
   const [industry, setIndustry] = useState("");
   const [companyURL, setCompanyURL] = useState("");
 
+  //  Edit modal state
+  const [editOpen, setEditOpen] = useState(false);
+  const [editId, setEditId] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+  const [editStatus, setEditStatus] = useState("applied");
+  const [editPositionType, setEditPositionType] = useState("Full-time");
+  const [editDateApplied, setEditDateApplied] = useState("");
+  const [editStartingPay, setEditStartingPay] = useState("");
+  const [editEndingPay, setEditEndingPay] = useState("");
+  const [editApplicationURL, setEditApplicationURL] = useState("");
+  const [editCompanyName, setEditCompanyName] = useState("");
+  const [editCompanyLocation, setEditCompanyLocation] = useState("");
+  const [editIndustry, setEditIndustry] = useState("");
+  const [editCompanyURL, setEditCompanyURL] = useState("");
+
+  // Open edit modal pre-filled
+  const openEdit = (app: JobApplicationProps) => {
+    setEditId(String(app._id));
+    setEditTitle(app.title);
+    setEditStatus(app.status);
+    setEditPositionType(app.positionType);
+    setEditDateApplied(new Date(app.dateApplied).toISOString().split("T")[0]);
+    setEditStartingPay(String(app.startingPay));
+    setEditEndingPay(String(app.endingPay));
+    setEditApplicationURL(app.applicationURL ?? "");
+    setEditCompanyName(app.company.name);
+    setEditCompanyLocation(app.company.location ?? "");
+    setEditIndustry(app.company.industries?.[0] ?? "");
+    setEditCompanyURL(app.company.companyURL ?? "");
+    setEditOpen(true);
+  };
+
+  const closeEdit = () => setEditOpen(false);
+
+  // Save edited application
+  const handleUpdate = async () => {
+    if (!editTitle || !editDateApplied || !editCompanyName) return;
+    try {
+      await updateTrigger({
+        _id: editId,
+        title: editTitle,
+        dateApplied: new Date(editDateApplied),
+        status: editStatus,
+        applicationURL: editApplicationURL,
+        positionType: editPositionType,
+        startingPay: Number(editStartingPay),
+        endingPay: Number(editEndingPay),
+        company: {
+          name: editCompanyName,
+          location: editCompanyLocation,
+          industries: editIndustry ? [editIndustry] : [],
+          companyURL: editCompanyURL,
+        },
+      });
+      await mutate();
+      closeEdit();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Add form handlers
   const clearForm = () => {
     setTitle("");
     setStatus("applied");
@@ -137,7 +241,7 @@ export default function JobTrackerHome() {
   const handleSubmit = async () => {
     if (!title || !dateApplied || !companyName) return;
     try {
-      await trigger({
+      await createTrigger({
         title,
         dateApplied: new Date(dateApplied),
         status,
@@ -159,7 +263,6 @@ export default function JobTrackerHome() {
     }
   };
 
-  // Counts for stat cards
   const applications: JobApplicationProps[] = data ?? [];
   const appliedCount = applications.filter(
     (a) => a.status?.toLowerCase() === "applied",
@@ -168,7 +271,7 @@ export default function JobTrackerHome() {
     (a) => a.status?.toLowerCase() === "interview",
   ).length;
 
-  // Styles
+  //  Styles
 
   const s = {
     root: {
@@ -177,7 +280,6 @@ export default function JobTrackerHome() {
       minHeight: "100vh",
       color: "#1a2a3a",
     } as React.CSSProperties,
-
     nav: {
       background: "rgba(255,255,255,0.85)",
       borderBottom: "1px solid rgba(100,160,230,0.2)",
@@ -190,7 +292,6 @@ export default function JobTrackerHome() {
       top: 0,
       zIndex: 100,
     } as React.CSSProperties,
-
     navLogo: {
       fontFamily: "'Syne', sans-serif",
       fontSize: "1.25rem",
@@ -201,14 +302,12 @@ export default function JobTrackerHome() {
       alignItems: "center",
       gap: "8px",
     } as React.CSSProperties,
-
     navDot: {
       width: "9px",
       height: "9px",
       background: "#3b82f6",
       borderRadius: "50%",
     } as React.CSSProperties,
-
     navLink: {
       fontSize: "0.9rem",
       fontWeight: 500,
@@ -220,14 +319,12 @@ export default function JobTrackerHome() {
       cursor: "pointer",
       textDecoration: "none",
     } as React.CSSProperties,
-
     hero: {
       padding: "2.5rem 2rem 1.5rem",
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
     } as React.CSSProperties,
-
     h1: {
       fontFamily: "'Syne', sans-serif",
       fontSize: "2rem",
@@ -236,15 +333,12 @@ export default function JobTrackerHome() {
       letterSpacing: "-0.03em",
       lineHeight: 1.15,
     } as React.CSSProperties,
-
     heroSub: {
       fontSize: "0.95rem",
       color: "#3a6ba0",
       marginTop: "6px",
     } as React.CSSProperties,
-
     stats: { display: "flex", gap: "12px" } as React.CSSProperties,
-
     stat: {
       background: "white",
       borderRadius: "14px",
@@ -253,14 +347,12 @@ export default function JobTrackerHome() {
       border: "1px solid rgba(100,160,230,0.25)",
       minWidth: "100px",
     } as React.CSSProperties,
-
     statNum: {
       fontFamily: "'Syne', sans-serif",
       fontSize: "1.6rem",
       fontWeight: 700,
       color: "#1559a8",
     } as React.CSSProperties,
-
     statLbl: {
       fontSize: "0.72rem",
       color: "#6b90b8",
@@ -268,21 +360,18 @@ export default function JobTrackerHome() {
       letterSpacing: "0.06em",
       marginTop: "2px",
     } as React.CSSProperties,
-
     content: {
       padding: "0 2rem 2rem",
       display: "flex",
       flexDirection: "column",
       gap: "1.5rem",
     } as React.CSSProperties,
-
     card: {
       background: "white",
       borderRadius: "18px",
       border: "1px solid rgba(100,160,230,0.22)",
       overflow: "hidden",
     } as React.CSSProperties,
-
     cardHeader: {
       padding: "1rem 1.4rem 0.75rem",
       borderBottom: "1px solid rgba(100,160,230,0.15)",
@@ -290,14 +379,12 @@ export default function JobTrackerHome() {
       alignItems: "center",
       justifyContent: "space-between",
     } as React.CSSProperties,
-
     cardTitle: {
       fontFamily: "'Syne', sans-serif",
       fontSize: "1rem",
       fontWeight: 700,
       color: "#0d3a72",
     } as React.CSSProperties,
-
     badge: (bg: string, color: string) =>
       ({
         fontSize: "0.72rem",
@@ -307,15 +394,12 @@ export default function JobTrackerHome() {
         background: bg,
         color,
       }) as React.CSSProperties,
-
     tblWrap: { overflowX: "auto" } as React.CSSProperties,
-
     table: {
       width: "100%",
       borderCollapse: "collapse",
-      minWidth: "780px",
+      minWidth: "860px",
     } as React.CSSProperties,
-
     th: {
       fontSize: "0.72rem",
       fontWeight: 500,
@@ -327,47 +411,54 @@ export default function JobTrackerHome() {
       borderBottom: "1px solid rgba(100,160,230,0.12)",
       whiteSpace: "nowrap",
     } as React.CSSProperties,
-
     td: {
       fontSize: "0.83rem",
       padding: "0.65rem 1.1rem",
       borderBottom: "1px solid rgba(100,160,230,0.08)",
       verticalAlign: "middle",
     } as React.CSSProperties,
-
+    editBtn: {
+      display: "flex",
+      alignItems: "center",
+      gap: "5px",
+      fontSize: "0.78rem",
+      fontWeight: 500,
+      color: "#1559a8",
+      background: "#eef4ff",
+      border: "1.5px solid #c5daf5",
+      borderRadius: "7px",
+      padding: "4px 10px",
+      cursor: "pointer",
+      whiteSpace: "nowrap",
+    } as React.CSSProperties,
     formBody: {
       padding: "1.2rem 1.4rem",
       display: "flex",
       flexDirection: "column",
       gap: "1.2rem",
     } as React.CSSProperties,
-
     formGrid: {
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
       gap: "1rem",
     } as React.CSSProperties,
-
     formGroup: {
       display: "flex",
       flexDirection: "column",
       gap: "5px",
     } as React.CSSProperties,
-
     formGroupFull: {
       display: "flex",
       flexDirection: "column",
       gap: "5px",
       gridColumn: "1 / -1",
     } as React.CSSProperties,
-
     label: {
       fontSize: "0.78rem",
       fontWeight: 500,
       color: "#3a6ba0",
       letterSpacing: "0.02em",
     } as React.CSSProperties,
-
     input: {
       border: "1.5px solid #c5daf5",
       borderRadius: "9px",
@@ -379,13 +470,11 @@ export default function JobTrackerHome() {
       outline: "none",
       width: "100%",
     } as React.CSSProperties,
-
     dividerRow: {
       display: "flex",
       alignItems: "center",
       gap: "10px",
     } as React.CSSProperties,
-
     dividerLabel: {
       fontSize: "0.72rem",
       fontWeight: 500,
@@ -394,33 +483,30 @@ export default function JobTrackerHome() {
       letterSpacing: "0.08em",
       whiteSpace: "nowrap",
     } as React.CSSProperties,
-
     dividerLine: {
       flex: 1,
       height: "1px",
       background: "rgba(100,160,230,0.2)",
     } as React.CSSProperties,
-
     formActions: {
       display: "flex",
       gap: "10px",
       justifyContent: "flex-end",
       paddingTop: "4px",
     } as React.CSSProperties,
-
-    btnPrimary: {
-      fontFamily: "'DM Sans', sans-serif",
-      fontSize: "0.875rem",
-      fontWeight: 500,
-      padding: "9px 20px",
-      borderRadius: "10px",
-      cursor: "pointer",
-      border: "none",
-      background: "#1559a8",
-      color: "white",
-      opacity: isMutating ? 0.6 : 1,
-    } as React.CSSProperties,
-
+    btnPrimary: (loading: boolean) =>
+      ({
+        fontFamily: "'DM Sans', sans-serif",
+        fontSize: "0.875rem",
+        fontWeight: 500,
+        padding: "9px 20px",
+        borderRadius: "10px",
+        cursor: "pointer",
+        border: "none",
+        background: "#1559a8",
+        color: "white",
+        opacity: loading ? 0.6 : 1,
+      }) as React.CSSProperties,
     btnSecondary: {
       fontFamily: "'DM Sans', sans-serif",
       fontSize: "0.875rem",
@@ -432,14 +518,287 @@ export default function JobTrackerHome() {
       color: "#1559a8",
       border: "1.5px solid rgba(100,160,230,0.35)",
     } as React.CSSProperties,
+    overlay: {
+      position: "fixed",
+      inset: 0,
+      background: "rgba(10,30,60,0.4)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 200,
+      padding: "1rem",
+    } as React.CSSProperties,
+    modal: {
+      background: "white",
+      borderRadius: "20px",
+      border: "1px solid rgba(100,160,230,0.25)",
+      width: "100%",
+      maxWidth: "640px",
+      maxHeight: "90vh",
+      overflowY: "auto",
+    } as React.CSSProperties,
+    modalHeader: {
+      padding: "1.1rem 1.4rem",
+      borderBottom: "1px solid rgba(100,160,230,0.15)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      position: "sticky",
+      top: 0,
+      background: "white",
+      zIndex: 1,
+    } as React.CSSProperties,
+    modalTitle: {
+      fontFamily: "'Syne', sans-serif",
+      fontSize: "1rem",
+      fontWeight: 700,
+      color: "#0d3a72",
+    } as React.CSSProperties,
+    modalClose: {
+      width: "30px",
+      height: "30px",
+      borderRadius: "8px",
+      background: "#f1f5f9",
+      border: "none",
+      cursor: "pointer",
+      fontSize: "1rem",
+      color: "#6b90b8",
+    } as React.CSSProperties,
+    modalFooter: {
+      padding: "1rem 1.4rem",
+      borderTop: "1px solid rgba(100,160,230,0.15)",
+      display: "flex",
+      gap: "10px",
+      justifyContent: "flex-end",
+      position: "sticky",
+      bottom: 0,
+      background: "white",
+    } as React.CSSProperties,
   };
+
+  // Shared form fields
+
+  const renderFormFields = (
+    vals: {
+      title: string;
+      status: string;
+      positionType: string;
+      dateApplied: string;
+      startingPay: string;
+      endingPay: string;
+      applicationURL: string;
+      companyName: string;
+      companyLocation: string;
+      industry: string;
+      companyURL: string;
+    },
+    setters: {
+      setTitle: (v: string) => void;
+      setStatus: (v: string) => void;
+      setPositionType: (v: string) => void;
+      setDateApplied: (v: string) => void;
+      setStartingPay: (v: string) => void;
+      setEndingPay: (v: string) => void;
+      setApplicationURL: (v: string) => void;
+      setCompanyName: (v: string) => void;
+      setCompanyLocation: (v: string) => void;
+      setIndustry: (v: string) => void;
+      setCompanyURL: (v: string) => void;
+    },
+  ) => (
+    <>
+      <div style={s.dividerRow}>
+        <span style={s.dividerLabel}>Position Info</span>
+        <div style={s.dividerLine} />
+      </div>
+      <div style={s.formGrid}>
+        <div style={s.formGroup}>
+          <label style={s.label}>Position Title</label>
+          <input
+            style={s.input}
+            type="text"
+            placeholder="e.g. Frontend Engineer"
+            value={vals.title}
+            onChange={(e) => setters.setTitle(e.target.value)}
+          />
+        </div>
+        <div style={s.formGroup}>
+          <label style={s.label}>Status</label>
+          <select
+            style={s.input}
+            value={vals.status}
+            onChange={(e) => setters.setStatus(e.target.value)}
+          >
+            <option value="applied">Applied</option>
+            <option value="screening">Screening</option>
+            <option value="interview">Interview</option>
+            <option value="offer">Offer</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+        <div style={s.formGroup}>
+          <label style={s.label}>Position Type</label>
+          <select
+            style={s.input}
+            value={vals.positionType}
+            onChange={(e) => setters.setPositionType(e.target.value)}
+          >
+            <option>Full-time</option>
+            <option>Part-time</option>
+            <option>Contract</option>
+            <option>Internship</option>
+          </select>
+        </div>
+        <div style={s.formGroup}>
+          <label style={s.label}>Date Applied</label>
+          <input
+            style={s.input}
+            type="date"
+            value={vals.dateApplied}
+            onChange={(e) => setters.setDateApplied(e.target.value)}
+          />
+        </div>
+        <div style={s.formGroup}>
+          <label style={s.label}>Starting Pay ($)</label>
+          <input
+            style={s.input}
+            type="number"
+            placeholder="e.g. 90000"
+            value={vals.startingPay}
+            onChange={(e) => setters.setStartingPay(e.target.value)}
+          />
+        </div>
+        <div style={s.formGroup}>
+          <label style={s.label}>Ending Pay ($)</label>
+          <input
+            style={s.input}
+            type="number"
+            placeholder="e.g. 120000"
+            value={vals.endingPay}
+            onChange={(e) => setters.setEndingPay(e.target.value)}
+          />
+        </div>
+        <div style={s.formGroupFull}>
+          <label style={s.label}>Application URL</label>
+          <input
+            style={s.input}
+            type="url"
+            placeholder="https://linkedin.com/jobs/..."
+            value={vals.applicationURL}
+            onChange={(e) => setters.setApplicationURL(e.target.value)}
+          />
+        </div>
+      </div>
+      <div style={s.dividerRow}>
+        <span style={s.dividerLabel}>Company Info</span>
+        <div style={s.dividerLine} />
+      </div>
+      <div style={s.formGrid}>
+        <div style={s.formGroup}>
+          <label style={s.label}>Company Name</label>
+          <input
+            style={s.input}
+            type="text"
+            placeholder="e.g. Klaviyo"
+            value={vals.companyName}
+            onChange={(e) => setters.setCompanyName(e.target.value)}
+          />
+        </div>
+        <div style={s.formGroup}>
+          <label style={s.label}>Location</label>
+          <input
+            style={s.input}
+            type="text"
+            placeholder="e.g. Boston, MA"
+            value={vals.companyLocation}
+            onChange={(e) => setters.setCompanyLocation(e.target.value)}
+          />
+        </div>
+        <div style={s.formGroup}>
+          <label style={s.label}>Industry</label>
+          <input
+            style={s.input}
+            type="text"
+            placeholder="e.g. Marketing Services"
+            value={vals.industry}
+            onChange={(e) => setters.setIndustry(e.target.value)}
+          />
+        </div>
+        <div style={s.formGroup}>
+          <label style={s.label}>Company URL</label>
+          <input
+            style={s.input}
+            type="url"
+            placeholder="https://company.com"
+            value={vals.companyURL}
+            onChange={(e) => setters.setCompanyURL(e.target.value)}
+          />
+        </div>
+      </div>
+    </>
+  );
 
   // Render
 
   return (
     <div style={s.root}>
-      {/* Google Fonts */}
       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Syne:wght@500;700&display=swap');`}</style>
+
+      {/* Edit Modal */}
+      {editOpen && (
+        <div style={s.overlay} onClick={closeEdit}>
+          <div style={s.modal} onClick={(e) => e.stopPropagation()}>
+            <div style={s.modalHeader}>
+              <span style={s.modalTitle}>Edit Application</span>
+              <button style={s.modalClose} onClick={closeEdit}>
+                ✕
+              </button>
+            </div>
+            <div style={s.formBody}>
+              {renderFormFields(
+                {
+                  title: editTitle,
+                  status: editStatus,
+                  positionType: editPositionType,
+                  dateApplied: editDateApplied,
+                  startingPay: editStartingPay,
+                  endingPay: editEndingPay,
+                  applicationURL: editApplicationURL,
+                  companyName: editCompanyName,
+                  companyLocation: editCompanyLocation,
+                  industry: editIndustry,
+                  companyURL: editCompanyURL,
+                },
+                {
+                  setTitle: setEditTitle,
+                  setStatus: setEditStatus,
+                  setPositionType: setEditPositionType,
+                  setDateApplied: setEditDateApplied,
+                  setStartingPay: setEditStartingPay,
+                  setEndingPay: setEditEndingPay,
+                  setApplicationURL: setEditApplicationURL,
+                  setCompanyName: setEditCompanyName,
+                  setCompanyLocation: setEditCompanyLocation,
+                  setIndustry: setEditIndustry,
+                  setCompanyURL: setEditCompanyURL,
+                },
+              )}
+            </div>
+            <div style={s.modalFooter}>
+              <button style={s.btnSecondary} onClick={closeEdit}>
+                Cancel
+              </button>
+              <button
+                style={s.btnPrimary(isUpdating)}
+                onClick={handleUpdate}
+                disabled={isUpdating}
+              >
+                {isUpdating ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Nav */}
       <nav style={s.nav}>
@@ -483,7 +842,6 @@ export default function JobTrackerHome() {
               {applications.length} total
             </span>
           </div>
-
           {error && (
             <p
               style={{
@@ -506,7 +864,6 @@ export default function JobTrackerHome() {
               Loading...
             </p>
           )}
-
           {data && (
             <div style={s.tblWrap}>
               <table style={s.table}>
@@ -520,6 +877,7 @@ export default function JobTrackerHome() {
                       "Type",
                       "Pay Range",
                       "App URL",
+                      "Edit",
                     ].map((h) => (
                       <th key={h} style={s.th}>
                         {h}
@@ -589,6 +947,11 @@ export default function JobTrackerHome() {
                           "—"
                         )}
                       </td>
+                      <td style={s.td}>
+                        <button style={s.editBtn} onClick={() => openEdit(app)}>
+                          <EditIcon /> Edit
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -598,155 +961,51 @@ export default function JobTrackerHome() {
           )}
         </div>
 
-        {/* Form Card */}
+        {/* Add Form Card */}
         <div style={s.card}>
           <div style={s.cardHeader}>
             <span style={s.cardTitle}>Add New Application</span>
             <span style={s.badge("#f1f5f9", "#475569")}>New entry</span>
           </div>
           <div style={s.formBody}>
-            {/* Position Info */}
-            <div style={s.dividerRow}>
-              <span style={s.dividerLabel}>Position Info</span>
-              <div style={s.dividerLine} />
-            </div>
-            <div style={s.formGrid}>
-              <div style={s.formGroup}>
-                <label style={s.label}>Position Title</label>
-                <input
-                  style={s.input}
-                  type="text"
-                  placeholder="e.g. Frontend Engineer"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                />
-              </div>
-              <div style={s.formGroup}>
-                <label style={s.label}>Status</label>
-                <select
-                  style={s.input}
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                >
-                  <option value="applied">Applied</option>
-                  <option value="screening">Screening</option>
-                  <option value="interview">Interview</option>
-                  <option value="offer">Offer</option>
-                  <option value="rejected">Rejected</option>
-                </select>
-              </div>
-              <div style={s.formGroup}>
-                <label style={s.label}>Position Type</label>
-                <select
-                  style={s.input}
-                  value={positionType}
-                  onChange={(e) => setPositionType(e.target.value)}
-                >
-                  <option>Full-time</option>
-                  <option>Part-time</option>
-                  <option>Contract</option>
-                  <option>Internship</option>
-                </select>
-              </div>
-              <div style={s.formGroup}>
-                <label style={s.label}>Date Applied</label>
-                <input
-                  style={s.input}
-                  type="date"
-                  value={dateApplied}
-                  onChange={(e) => setDateApplied(e.target.value)}
-                />
-              </div>
-              <div style={s.formGroup}>
-                <label style={s.label}>Starting Pay ($)</label>
-                <input
-                  style={s.input}
-                  type="number"
-                  placeholder="e.g. 90000"
-                  value={startingPay}
-                  onChange={(e) => setStartingPay(e.target.value)}
-                />
-              </div>
-              <div style={s.formGroup}>
-                <label style={s.label}>Ending Pay ($)</label>
-                <input
-                  style={s.input}
-                  type="number"
-                  placeholder="e.g. 120000"
-                  value={endingPay}
-                  onChange={(e) => setEndingPay(e.target.value)}
-                />
-              </div>
-              <div style={s.formGroupFull}>
-                <label style={s.label}>Application URL</label>
-                <input
-                  style={s.input}
-                  type="url"
-                  placeholder="https://linkedin.com/jobs/..."
-                  value={applicationURL}
-                  onChange={(e) => setApplicationURL(e.target.value)}
-                />
-              </div>
-            </div>
-
-            {/* Company Info */}
-            <div style={s.dividerRow}>
-              <span style={s.dividerLabel}>Company Info</span>
-              <div style={s.dividerLine} />
-            </div>
-            <div style={s.formGrid}>
-              <div style={s.formGroup}>
-                <label style={s.label}>Company Name</label>
-                <input
-                  style={s.input}
-                  type="text"
-                  placeholder="e.g. Klaviyo"
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                />
-              </div>
-              <div style={s.formGroup}>
-                <label style={s.label}>Location</label>
-                <input
-                  style={s.input}
-                  type="text"
-                  placeholder="e.g. Boston, MA"
-                  value={companyLocation}
-                  onChange={(e) => setCompanyLocation(e.target.value)}
-                />
-              </div>
-              <div style={s.formGroup}>
-                <label style={s.label}>Industry</label>
-                <input
-                  style={s.input}
-                  type="text"
-                  placeholder="e.g. Marketing Services"
-                  value={industry}
-                  onChange={(e) => setIndustry(e.target.value)}
-                />
-              </div>
-              <div style={s.formGroup}>
-                <label style={s.label}>Company URL</label>
-                <input
-                  style={s.input}
-                  type="url"
-                  placeholder="https://company.com"
-                  value={companyURL}
-                  onChange={(e) => setCompanyURL(e.target.value)}
-                />
-              </div>
-            </div>
-
+            {renderFormFields(
+              {
+                title,
+                status,
+                positionType,
+                dateApplied,
+                startingPay,
+                endingPay,
+                applicationURL,
+                companyName,
+                companyLocation,
+                industry,
+                companyURL,
+              },
+              {
+                setTitle,
+                setStatus,
+                setPositionType,
+                setDateApplied,
+                setStartingPay,
+                setEndingPay,
+                setApplicationURL,
+                setCompanyName,
+                setCompanyLocation,
+                setIndustry,
+                setCompanyURL,
+              },
+            )}
             <div style={s.formActions}>
               <button style={s.btnSecondary} onClick={clearForm}>
                 Clear
               </button>
               <button
-                style={s.btnPrimary}
+                style={s.btnPrimary(isCreating)}
                 onClick={handleSubmit}
-                disabled={isMutating}
+                disabled={isCreating}
               >
-                {isMutating ? "Saving..." : "Add Application"}
+                {isCreating ? "Saving..." : "Add Application"}
               </button>
             </div>
           </div>

@@ -26,6 +26,8 @@ export async function POST(request:Request): Promise<NextResponse>{
 
 export async function GET(request:NextRequest): Promise<NextResponse>{
     const searchParams = request.nextUrl.searchParams;
+    const email = searchParams.get("email");
+    const provider = searchParams.get("provider");
     const id = searchParams.get("id");
     const startDateApplied = searchParams.get("startDateApplied");
     const endDateApplied = searchParams.get("endDateApplied");
@@ -39,8 +41,10 @@ export async function GET(request:NextRequest): Promise<NextResponse>{
 
         }
         
-    } else if (startDateApplied && endDateApplied) {
+    } else if (email && provider && startDateApplied && endDateApplied) {
         const jobApplications:JobApplicationProps[] | null = await getJobApplicationsByDateRange(
+            email, 
+            provider,
             new Date(startDateApplied),
             new Date(endDateApplied)
         );
@@ -52,8 +56,8 @@ export async function GET(request:NextRequest): Promise<NextResponse>{
 
         }
 
-    } else {
-        const jobApplications:JobApplicationProps[] | null = await getJobApplications();
+    } else if (email && provider ) {
+        const jobApplications:JobApplicationProps[] | null = await getJobApplications(email, provider);
         if(!jobApplications){
             return NextResponse.json([], {status:200});
 
@@ -61,6 +65,8 @@ export async function GET(request:NextRequest): Promise<NextResponse>{
             return NextResponse.json(jobApplications);
 
         }
+    } else {
+        return NextResponse.json({error: "No userId and provider provided"}, {status:500});
     }
 }
 
@@ -78,10 +84,9 @@ export async function PUT(request:Request): Promise<NextResponse>{
 
 
 export async function DELETE(request:NextRequest): Promise<NextResponse>{
-    const searchParams = request.nextUrl.searchParams;
-    const id = searchParams.get("id");
-    if (id) {
-        const submissionStatus = await deleteJobApplication(id);
+    const response: {"id":string} = await request.json();
+    if (response["id"]) {
+        const submissionStatus = await deleteJobApplication(response["id"]);
         if(!submissionStatus.successfulSubmission){
             return NextResponse.json({error: submissionStatus.message}, {status:500});
         }

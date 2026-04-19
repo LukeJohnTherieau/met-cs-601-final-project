@@ -16,6 +16,10 @@ export type JobApplicationProps = {
         location: string;
         companyURL: string;
     };
+    user: {
+        email: string | undefined | null;
+        provider: string | undefined | null;
+    }
 };
 
 

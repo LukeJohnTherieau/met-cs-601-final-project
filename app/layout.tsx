@@ -1,10 +1,6 @@
 import "./globals.css";
-<head>
-  <link
-    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Syne:wght@500;700&display=swap"
-    rel="stylesheet"
-  />
-</head>;
+import { SessionProvider } from "next-auth/react"
+
 
 export default function RootLayout({
   children,
@@ -13,7 +9,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <SessionProvider>{children}</SessionProvider>
+      </body>
     </html>
   );
 }

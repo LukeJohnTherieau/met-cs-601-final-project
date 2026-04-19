@@ -4,6 +4,9 @@ import { useState } from "react";
 import useSWR from "swr";
 import useSWRMutation from "swr/mutation";
 import { JobApplicationProps } from "@/types";
+import { Session } from "next-auth"
+import { signOut } from "next-auth/react"
+import Image from 'next/image'
 
 // API helpers
 
@@ -26,6 +29,17 @@ async function putApplication(
 ) {
   return fetch(url, {
     method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(arg),
+  }).then((res) => res.json());
+}
+
+async function deleteApplication(
+  url: string,
+  { arg }: { arg: {id : string } },
+) {
+  return fetch(url, {
+    method: "DELETE",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(arg),
   }).then((res) => res.json());
@@ -134,10 +148,18 @@ function EditIcon() {
   );
 }
 
-// Main component
+function DeleteIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash" viewBox="0 0 16 16">
+      <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
+      <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
+    </svg>
+  );
+}
 
-export default function JobTrackerHome() {
-  const API = "/api/job-applications";
+// Main component
+export default function JobTrackerHome({ session }: { session: Session }) {
+  const API = `/api/job-applications?email=${session.user?.email}&provider=${session.user?.provider}`;
 
   const { data, error, mutate } = useSWR<JobApplicationProps[]>(API, fetcher);
   const { trigger: createTrigger, isMutating: isCreating } = useSWRMutation(
@@ -147,6 +169,10 @@ export default function JobTrackerHome() {
   const { trigger: updateTrigger, isMutating: isUpdating } = useSWRMutation(
     API,
     putApplication,
+  );
+  const { trigger: DeleteTrigger, isMutating: isDeleting } = useSWRMutation(
+    API,
+    deleteApplication,
   );
 
   // Add form state
@@ -215,6 +241,10 @@ export default function JobTrackerHome() {
           industries: editIndustry ? [editIndustry] : [],
           companyURL: editCompanyURL,
         },
+        user: {
+          email: session.user?.email,
+          provider: session.user?.provider
+        }
       });
       await mutate();
       closeEdit();
@@ -255,11 +285,32 @@ export default function JobTrackerHome() {
           industries: industry ? [industry] : [],
           companyURL,
         },
+        user: {
+          email: session.user?.email,
+          provider: session.user?.provider
+        }
       });
       await mutate();
       clearForm();
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleDelete = async (app:JobApplicationProps) => {
+    if (app._id && typeof app._id === "string") {
+      try {
+        await DeleteTrigger(
+          {
+            id : app._id
+          }
+
+        );
+        await mutate();
+        clearForm();
+      } catch (e) {
+        console.error(e);
+      }
     }
   };
 
@@ -308,6 +359,11 @@ export default function JobTrackerHome() {
       background: "#3b82f6",
       borderRadius: "50%",
     } as React.CSSProperties,
+    profilePicture: {
+      borderRadius: "50%",
+      objectFit: "cover",
+      margin: "5px",
+    } as React.CSSProperties,
     navLink: {
       fontSize: "0.9rem",
       fontWeight: 500,
@@ -316,6 +372,18 @@ export default function JobTrackerHome() {
       borderRadius: "20px",
       border: "1.5px solid #a0c4f0",
       background: "rgba(59,130,246,0.07)",
+      cursor: "pointer",
+      textDecoration: "none",
+    } as React.CSSProperties,
+    navSignOutButton: {
+      fontSize: "0.9rem",
+      fontWeight: 500,
+      color: "red",
+      padding: "6px 18px",
+      margin: "0px 12px",
+      borderRadius: "20px",
+      border: "1.5px solid #FF7575",
+      background: "#FFD9D9",
       cursor: "pointer",
       textDecoration: "none",
     } as React.CSSProperties,
@@ -806,14 +874,27 @@ export default function JobTrackerHome() {
           <div style={s.navDot} />
           JobTracker
         </div>
-        <a style={s.navLink}>Graphs</a>
+        <div>
+          <button style={s.navSignOutButton} onClick={() => signOut()}>Sign out</button>
+          <a style={s.navLink}>Graphs</a>
+        </div>
       </nav>
 
       {/* Hero */}
       <div style={s.hero}>
+        {session?.user?.image ? (
+          <Image
+            style={s.profilePicture}
+            src={session.user.image}
+            width={150}
+            height={150}
+            alt={`Profile Picture`}
+            priority={true}
+          />
+        ) : null}
         <div>
           <h1 style={s.h1}>
-            My Application
+            {session.user?.name}&apos;s Application
             <br />
             Dashboard
           </h1>
@@ -878,6 +959,7 @@ export default function JobTrackerHome() {
                       "Pay Range",
                       "App URL",
                       "Edit",
+                      "Delete",
                     ].map((h) => (
                       <th key={h} style={s.th}>
                         {h}
@@ -950,6 +1032,11 @@ export default function JobTrackerHome() {
                       <td style={s.td}>
                         <button style={s.editBtn} onClick={() => openEdit(app)}>
                           <EditIcon /> Edit
+                        </button>
+                      </td>
+                      <td style={s.td}>
+                        <button style={s.editBtn} onClick={() => handleDelete(app)} disabled={isDeleting}>
+                          <DeleteIcon />
                         </button>
                       </td>
                     </tr>

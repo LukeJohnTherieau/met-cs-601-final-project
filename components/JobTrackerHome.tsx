@@ -1,17 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import useSWR from "swr";
 import useSWRMutation from "swr/mutation";
 import { JobApplicationProps } from "@/types";
-import { Session } from "next-auth"
-import { signOut } from "next-auth/react"
-import Image from 'next/image'
+import { Session } from "next-auth";
+import { signOut } from "next-auth/react";
+import Image from "next/image";
 import Link from "next/link";
 
-// API helpers
+// ─── API helpers ────────────────────────────────────────────────────────────
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 async function postApplication(
   url: string,
@@ -21,7 +21,7 @@ async function postApplication(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(arg),
-  }).then((res) => res.json());
+  }).then((r) => r.json());
 }
 
 async function putApplication(
@@ -32,21 +32,21 @@ async function putApplication(
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(arg),
-  }).then((res) => res.json());
+  }).then((r) => r.json());
 }
 
 async function deleteApplication(
   url: string,
-  { arg }: { arg: {id : string } },
+  { arg }: { arg: { id: string } },
 ) {
   return fetch(url, {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(arg),
-  }).then((res) => res.json());
+  }).then((r) => r.json());
 }
 
-// Status badge
+// ─── Status badge ────────────────────────────────────────────────────────────
 
 const statusStyles: Record<
   string,
@@ -82,7 +82,7 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-// Empty state
+// ─── Empty state ─────────────────────────────────────────────────────────────
 
 function EmptyState() {
   return (
@@ -131,7 +131,7 @@ function EmptyState() {
   );
 }
 
-// Edit icon
+// ─── Icons ───────────────────────────────────────────────────────────────────
 
 function EditIcon() {
   return (
@@ -151,14 +151,21 @@ function EditIcon() {
 
 function DeleteIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash" viewBox="0 0 16 16">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="15"
+      height="15"
+      fill="currentColor"
+      viewBox="0 0 16 16"
+    >
       <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
       <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
     </svg>
   );
 }
 
-// Main component
+// ─── Main component ──────────────────────────────────────────────────────────
+
 export default function JobTrackerHome({ session }: { session: Session }) {
   const API = `/api/job-applications?email=${session.user?.email}&provider=${session.user?.provider}`;
 
@@ -176,7 +183,18 @@ export default function JobTrackerHome({ session }: { session: Session }) {
     deleteApplication,
   );
 
-  // Add form state
+  // ── Responsive breakpoint ────────────────────────────────────────────────
+  const [windowWidth, setWindowWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1200,
+  );
+  useEffect(() => {
+    const onResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  const isMobile = windowWidth < 640;
+
+  // ── Add form state ────────────────────────────────────────────────────────
   const [title, setTitle] = useState("");
   const [status, setStatus] = useState("applied");
   const [positionType, setPositionType] = useState("Full-time");
@@ -189,7 +207,7 @@ export default function JobTrackerHome({ session }: { session: Session }) {
   const [industry, setIndustry] = useState("");
   const [companyURL, setCompanyURL] = useState("");
 
-  //  Edit modal state
+  // ── Edit modal state ──────────────────────────────────────────────────────
   const [editOpen, setEditOpen] = useState(false);
   const [editId, setEditId] = useState("");
   const [editTitle, setEditTitle] = useState("");
@@ -204,7 +222,7 @@ export default function JobTrackerHome({ session }: { session: Session }) {
   const [editIndustry, setEditIndustry] = useState("");
   const [editCompanyURL, setEditCompanyURL] = useState("");
 
-  // Open edit modal pre-filled
+  // ── Handlers ──────────────────────────────────────────────────────────────
   const openEdit = (app: JobApplicationProps) => {
     setEditId(String(app._id));
     setEditTitle(app.title);
@@ -220,10 +238,8 @@ export default function JobTrackerHome({ session }: { session: Session }) {
     setEditCompanyURL(app.company.companyURL ?? "");
     setEditOpen(true);
   };
-
   const closeEdit = () => setEditOpen(false);
 
-  // Save edited application
   const handleUpdate = async () => {
     if (!editTitle || !editDateApplied || !editCompanyName) return;
     try {
@@ -242,10 +258,7 @@ export default function JobTrackerHome({ session }: { session: Session }) {
           industries: editIndustry ? [editIndustry] : [],
           companyURL: editCompanyURL,
         },
-        user: {
-          email: session.user?.email,
-          provider: session.user?.provider
-        }
+        user: { email: session.user?.email, provider: session.user?.provider },
       });
       await mutate();
       closeEdit();
@@ -254,7 +267,6 @@ export default function JobTrackerHome({ session }: { session: Session }) {
     }
   };
 
-  // Add form handlers
   const clearForm = () => {
     setTitle("");
     setStatus("applied");
@@ -286,10 +298,7 @@ export default function JobTrackerHome({ session }: { session: Session }) {
           industries: industry ? [industry] : [],
           companyURL,
         },
-        user: {
-          email: session.user?.email,
-          provider: session.user?.provider
-        }
+        user: { email: session.user?.email, provider: session.user?.provider },
       });
       await mutate();
       clearForm();
@@ -298,15 +307,10 @@ export default function JobTrackerHome({ session }: { session: Session }) {
     }
   };
 
-  const handleDelete = async (app:JobApplicationProps) => {
+  const handleDelete = async (app: JobApplicationProps) => {
     if (app._id && typeof app._id === "string") {
       try {
-        await DeleteTrigger(
-          {
-            id : app._id
-          }
-
-        );
+        await DeleteTrigger({ id: app._id });
         await mutate();
         clearForm();
       } catch (e) {
@@ -323,7 +327,8 @@ export default function JobTrackerHome({ session }: { session: Session }) {
     (a) => a.status?.toLowerCase() === "interview",
   ).length;
 
-  //  Styles
+  // ── Styles ────────────────────────────────────────────────────────────────
+  const px = isMobile ? "1rem" : "2rem";
 
   const s = {
     root: {
@@ -332,128 +337,174 @@ export default function JobTrackerHome({ session }: { session: Session }) {
       minHeight: "100vh",
       color: "#1a2a3a",
     } as React.CSSProperties,
+
     nav: {
-      background: "rgba(255,255,255,0.85)",
+      background: "rgba(255,255,255,0.92)",
+      backdropFilter: "blur(10px)",
+      WebkitBackdropFilter: "blur(10px)",
       borderBottom: "1px solid rgba(100,160,230,0.2)",
-      padding: "0 2rem",
+      padding: `0 ${px}`,
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
-      height: "58px",
+      height: "56px",
       position: "sticky",
       top: 0,
       zIndex: 100,
     } as React.CSSProperties,
+
     navLogo: {
       fontFamily: "'Syne', sans-serif",
-      fontSize: "1.25rem",
+      fontSize: isMobile ? "1.05rem" : "1.25rem",
       fontWeight: 700,
       color: "#1559a8",
       letterSpacing: "-0.02em",
       display: "flex",
       alignItems: "center",
-      gap: "8px",
+      gap: "7px",
+      flexShrink: 0,
     } as React.CSSProperties,
+
     navDot: {
-      width: "9px",
-      height: "9px",
+      width: "8px",
+      height: "8px",
       background: "#3b82f6",
       borderRadius: "50%",
+      flexShrink: 0,
     } as React.CSSProperties,
-    profilePicture: {
-      borderRadius: "50%",
-      objectFit: "cover",
-      margin: "5px",
+
+    // flex row, never wraps — buttons stay inline at all widths
+    navActions: {
+      display: "flex",
+      alignItems: "center",
+      gap: "6px",
+      flexShrink: 0,
     } as React.CSSProperties,
+
+    navSignOutButton: {
+      fontSize: isMobile ? "0.75rem" : "0.88rem",
+      fontWeight: 500,
+      color: "#c0392b",
+      padding: isMobile ? "5px 10px" : "6px 16px",
+      borderRadius: "20px",
+      border: "1.5px solid #FF7575",
+      background: "#FFD9D9",
+      cursor: "pointer",
+      whiteSpace: "nowrap",
+    } as React.CSSProperties,
+
     navLink: {
-      fontSize: "0.9rem",
+      fontSize: isMobile ? "0.75rem" : "0.88rem",
       fontWeight: 500,
       color: "#1559a8",
-      padding: "6px 18px",
+      padding: isMobile ? "5px 10px" : "6px 16px",
       borderRadius: "20px",
       border: "1.5px solid #a0c4f0",
       background: "rgba(59,130,246,0.07)",
       cursor: "pointer",
       textDecoration: "none",
+      whiteSpace: "nowrap",
     } as React.CSSProperties,
-    navSignOutButton: {
-      fontSize: "0.9rem",
-      fontWeight: 500,
-      color: "red",
-      padding: "6px 18px",
-      margin: "0px 12px",
-      borderRadius: "20px",
-      border: "1.5px solid #FF7575",
-      background: "#FFD9D9",
-      cursor: "pointer",
-      textDecoration: "none",
-    } as React.CSSProperties,
+
+    // On mobile: column layout so stats never overflow right
     hero: {
-      padding: "2.5rem 2rem 1.5rem",
+      padding: isMobile ? "1.25rem 1rem 1rem" : "2.5rem 2rem 1.5rem",
+      display: "flex",
+      flexDirection: isMobile ? "column" : "row",
+      alignItems: isMobile ? "flex-start" : "center",
+      justifyContent: "space-between",
+      gap: isMobile ? "1rem" : "0",
+    } as React.CSSProperties,
+
+    heroLeft: {
       display: "flex",
       alignItems: "center",
-      justifyContent: "space-between",
+      gap: "12px",
     } as React.CSSProperties,
+
+    profilePicture: {
+      borderRadius: "50%",
+      objectFit: "cover",
+      flexShrink: 0,
+    } as React.CSSProperties,
+
     h1: {
       fontFamily: "'Syne', sans-serif",
-      fontSize: "2rem",
+      fontSize: isMobile ? "1.35rem" : "2rem",
       fontWeight: 700,
       color: "#0d3a72",
       letterSpacing: "-0.03em",
-      lineHeight: 1.15,
+      lineHeight: 1.2,
+      margin: 0,
     } as React.CSSProperties,
+
     heroSub: {
-      fontSize: "0.95rem",
+      fontSize: isMobile ? "0.82rem" : "0.95rem",
       color: "#3a6ba0",
-      marginTop: "6px",
+      marginTop: "5px",
     } as React.CSSProperties,
-    stats: { display: "flex", gap: "12px" } as React.CSSProperties,
+
+    // On mobile: full-width row so both stat cards share the space equally
+    stats: {
+      display: "flex",
+      gap: "10px",
+      width: isMobile ? "100%" : "auto",
+    } as React.CSSProperties,
+
     stat: {
       background: "white",
       borderRadius: "14px",
-      padding: "14px 28px",
+      padding: isMobile ? "12px 0" : "14px 28px",
       textAlign: "center",
       border: "1px solid rgba(100,160,230,0.25)",
-      minWidth: "100px",
+      flex: isMobile ? 1 : "none",
+      minWidth: isMobile ? 0 : "100px",
     } as React.CSSProperties,
+
     statNum: {
       fontFamily: "'Syne', sans-serif",
-      fontSize: "1.6rem",
+      fontSize: isMobile ? "1.4rem" : "1.6rem",
       fontWeight: 700,
       color: "#1559a8",
     } as React.CSSProperties,
+
     statLbl: {
-      fontSize: "0.72rem",
+      fontSize: "0.7rem",
       color: "#6b90b8",
       textTransform: "uppercase",
       letterSpacing: "0.06em",
       marginTop: "2px",
     } as React.CSSProperties,
+
     content: {
-      padding: "0 2rem 2rem",
+      padding: isMobile ? "0 0.75rem 2rem" : "0 2rem 2rem",
       display: "flex",
       flexDirection: "column",
-      gap: "1.5rem",
+      gap: "1.25rem",
     } as React.CSSProperties,
+
     card: {
       background: "white",
-      borderRadius: "18px",
+      borderRadius: isMobile ? "14px" : "18px",
       border: "1px solid rgba(100,160,230,0.22)",
       overflow: "hidden",
     } as React.CSSProperties,
+
     cardHeader: {
-      padding: "1rem 1.4rem 0.75rem",
+      padding: isMobile ? "0.85rem 1rem 0.7rem" : "1rem 1.4rem 0.75rem",
       borderBottom: "1px solid rgba(100,160,230,0.15)",
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
     } as React.CSSProperties,
+
     cardTitle: {
       fontFamily: "'Syne', sans-serif",
-      fontSize: "1rem",
+      fontSize: isMobile ? "0.9rem" : "1rem",
       fontWeight: 700,
       color: "#0d3a72",
     } as React.CSSProperties,
+
     badge: (bg: string, color: string) =>
       ({
         fontSize: "0.72rem",
@@ -463,12 +514,18 @@ export default function JobTrackerHome({ session }: { session: Session }) {
         background: bg,
         color,
       }) as React.CSSProperties,
-    tblWrap: { overflowX: "auto" } as React.CSSProperties,
+
+    tblWrap: {
+      overflowX: "auto" as const,
+      WebkitOverflowScrolling: "touch" as any,
+    } as React.CSSProperties,
+
     table: {
       width: "100%",
       borderCollapse: "collapse",
       minWidth: "860px",
     } as React.CSSProperties,
+
     th: {
       fontSize: "0.72rem",
       fontWeight: 500,
@@ -479,13 +536,16 @@ export default function JobTrackerHome({ session }: { session: Session }) {
       textAlign: "left",
       borderBottom: "1px solid rgba(100,160,230,0.12)",
       whiteSpace: "nowrap",
+      background: "white",
     } as React.CSSProperties,
+
     td: {
       fontSize: "0.83rem",
       padding: "0.65rem 1.1rem",
       borderBottom: "1px solid rgba(100,160,230,0.08)",
       verticalAlign: "middle",
     } as React.CSSProperties,
+
     editBtn: {
       display: "flex",
       alignItems: "center",
@@ -500,45 +560,53 @@ export default function JobTrackerHome({ session }: { session: Session }) {
       cursor: "pointer",
       whiteSpace: "nowrap",
     } as React.CSSProperties,
+
     formBody: {
-      padding: "1.2rem 1.4rem",
+      padding: isMobile ? "1rem" : "1.2rem 1.4rem",
       display: "flex",
       flexDirection: "column",
       gap: "1.2rem",
     } as React.CSSProperties,
+
+    // 1-column on mobile, 2-column on desktop
     formGrid: {
       display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: "1rem",
+      gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+      gap: isMobile ? "0.85rem" : "1rem",
     } as React.CSSProperties,
+
     formGroup: {
       display: "flex",
       flexDirection: "column",
       gap: "5px",
     } as React.CSSProperties,
+
     formGroupFull: {
       display: "flex",
       flexDirection: "column",
       gap: "5px",
-      gridColumn: "1 / -1",
+      gridColumn: isMobile ? "auto" : "1 / -1",
     } as React.CSSProperties,
+
     label: {
       fontSize: "0.78rem",
       fontWeight: 500,
       color: "#3a6ba0",
       letterSpacing: "0.02em",
     } as React.CSSProperties,
+
     input: {
       border: "1.5px solid #c5daf5",
       borderRadius: "9px",
       padding: "9px 12px",
-      fontSize: "0.875rem",
       fontFamily: "'DM Sans', sans-serif",
       background: "#ffffff",
       color: "#1a2a3a",
       outline: "none",
       width: "100%",
+      boxSizing: "border-box",
     } as React.CSSProperties,
+
     dividerRow: {
       display: "flex",
       alignItems: "center",
@@ -557,57 +625,67 @@ export default function JobTrackerHome({ session }: { session: Session }) {
       height: "1px",
       background: "rgba(100,160,230,0.2)",
     } as React.CSSProperties,
+
+    // Buttons stack full-width on mobile (primary on top via column-reverse)
     formActions: {
       display: "flex",
       gap: "10px",
-      justifyContent: "flex-end",
+      justifyContent: isMobile ? "stretch" : "flex-end",
+      flexDirection: isMobile ? "column-reverse" : "row",
       paddingTop: "4px",
     } as React.CSSProperties,
+
     btnPrimary: (loading: boolean) =>
       ({
         fontFamily: "'DM Sans', sans-serif",
-        fontSize: "0.875rem",
-        fontWeight: 500,
-        padding: "9px 20px",
+        fontSize: "0.9rem",
+        fontWeight: 600,
+        padding: "11px 20px",
         borderRadius: "10px",
-        cursor: "pointer",
+        cursor: loading ? "not-allowed" : "pointer",
         border: "none",
         background: "#1559a8",
         color: "white",
         opacity: loading ? 0.6 : 1,
+        width: isMobile ? "100%" : "auto",
       }) as React.CSSProperties,
+
     btnSecondary: {
       fontFamily: "'DM Sans', sans-serif",
-      fontSize: "0.875rem",
+      fontSize: "0.9rem",
       fontWeight: 500,
-      padding: "9px 20px",
+      padding: "11px 20px",
       borderRadius: "10px",
       cursor: "pointer",
       background: "rgba(100,160,230,0.15)",
       color: "#1559a8",
       border: "1.5px solid rgba(100,160,230,0.35)",
+      width: isMobile ? "100%" : "auto",
     } as React.CSSProperties,
+
     overlay: {
       position: "fixed",
       inset: 0,
-      background: "rgba(10,30,60,0.4)",
+      background: "rgba(10,30,60,0.45)",
       display: "flex",
-      alignItems: "center",
+      alignItems: isMobile ? "flex-end" : "center",
       justifyContent: "center",
       zIndex: 200,
-      padding: "1rem",
+      padding: isMobile ? "0" : "1rem",
     } as React.CSSProperties,
+
     modal: {
       background: "white",
-      borderRadius: "20px",
+      borderRadius: isMobile ? "20px 20px 0 0" : "20px",
       border: "1px solid rgba(100,160,230,0.25)",
       width: "100%",
-      maxWidth: "640px",
-      maxHeight: "90vh",
+      maxWidth: isMobile ? "100%" : "640px",
+      maxHeight: isMobile ? "92vh" : "90vh",
       overflowY: "auto",
     } as React.CSSProperties,
+
     modalHeader: {
-      padding: "1.1rem 1.4rem",
+      padding: isMobile ? "1rem" : "1.1rem 1.4rem",
       borderBottom: "1px solid rgba(100,160,230,0.15)",
       display: "flex",
       alignItems: "center",
@@ -617,26 +695,31 @@ export default function JobTrackerHome({ session }: { session: Session }) {
       background: "white",
       zIndex: 1,
     } as React.CSSProperties,
+
     modalTitle: {
       fontFamily: "'Syne', sans-serif",
       fontSize: "1rem",
       fontWeight: 700,
       color: "#0d3a72",
     } as React.CSSProperties,
+
     modalClose: {
-      width: "30px",
-      height: "30px",
+      width: "32px",
+      height: "32px",
       borderRadius: "8px",
       background: "#f1f5f9",
       border: "none",
       cursor: "pointer",
       fontSize: "1rem",
       color: "#6b90b8",
+      flexShrink: 0,
     } as React.CSSProperties,
+
     modalFooter: {
-      padding: "1rem 1.4rem",
+      padding: isMobile ? "1rem" : "1rem 1.4rem",
       borderTop: "1px solid rgba(100,160,230,0.15)",
       display: "flex",
+      flexDirection: isMobile ? "column-reverse" : "row",
       gap: "10px",
       justifyContent: "flex-end",
       position: "sticky",
@@ -645,8 +728,7 @@ export default function JobTrackerHome({ session }: { session: Session }) {
     } as React.CSSProperties,
   };
 
-  // Shared form fields
-
+  // ── Shared form fields ────────────────────────────────────────────────────
   const renderFormFields = (
     vals: {
       title: string;
@@ -758,6 +840,7 @@ export default function JobTrackerHome({ session }: { session: Session }) {
           />
         </div>
       </div>
+
       <div style={s.dividerRow}>
         <span style={s.dividerLabel}>Company Info</span>
         <div style={s.dividerLine} />
@@ -807,13 +890,22 @@ export default function JobTrackerHome({ session }: { session: Session }) {
     </>
   );
 
-  // Render
-
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div style={s.root}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Syne:wght@500;700&display=swap');`}</style>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Syne:wght@500;700&display=swap');
+        *, *::before, *::after { box-sizing: border-box; margin: 0; }
+        /* Prevent iOS zoom on input focus */
+        input, select, textarea { font-size: 16px !important; }
+        /* Smooth table scroll + styled bar on desktop */
+        .tbl-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .tbl-scroll::-webkit-scrollbar { height: 5px; }
+        .tbl-scroll::-webkit-scrollbar-track { background: #f0f6ff; }
+        .tbl-scroll::-webkit-scrollbar-thumb { background: #c5daf5; border-radius: 10px; }
+      `}</style>
 
-      {/* Edit Modal */}
+      {/* ── Edit Modal ── */}
       {editOpen && (
         <div style={s.overlay} onClick={closeEdit}>
           <div style={s.modal} onClick={(e) => e.stopPropagation()}>
@@ -869,40 +961,48 @@ export default function JobTrackerHome({ session }: { session: Session }) {
         </div>
       )}
 
-      {/* Nav */}
+      {/* ── Nav ── */}
       <nav style={s.nav}>
         <div style={s.navLogo}>
           <div style={s.navDot} />
           JobTracker
         </div>
-        <div>
-          <button style={s.navSignOutButton} onClick={() => signOut()}>Sign out</button>
-           <Link href="/graph" style={s.navLink}>Graphs</Link>
+        {/* navActions has flexShrink:0 → buttons never wrap or overflow */}
+        <div style={s.navActions}>
+          <button style={s.navSignOutButton} onClick={() => signOut()}>
+            Sign out
+          </button>
+          <Link href="/graph" style={s.navLink}>
+            Graphs
+          </Link>
         </div>
       </nav>
 
-      {/* Hero */}
+      {/* ── Hero ── */}
       <div style={s.hero}>
-        {session?.user?.image ? (
-          <Image
-            style={s.profilePicture}
-            src={session.user.image}
-            width={150}
-            height={150}
-            alt={`Profile Picture`}
-            priority={true}
-          />
-        ) : null}
-        <div>
-          <h1 style={s.h1}>
-            {session.user?.name}&apos;s Application
-            <br />
-            Dashboard
-          </h1>
-          <p style={s.heroSub}>
-            Track every opportunity — from applied to offer.
-          </p>
+        {/* Avatar + title stacked in a flex row */}
+        <div style={s.heroLeft}>
+          {session?.user?.image && (
+            <Image
+              style={s.profilePicture}
+              src={session.user.image}
+              width={isMobile ? 50 : 64}
+              height={isMobile ? 50 : 64}
+              alt="Profile Picture"
+              priority
+            />
+          )}
+          <div>
+            <h1 style={s.h1}>
+              {session.user?.name}&apos;s Application Dashboard
+            </h1>
+            <p style={s.heroSub}>
+              Track every opportunity — from applied to offer.
+            </p>
+          </div>
         </div>
+
+        {/* Stats: full-width row on mobile, auto on desktop — never overflows */}
         <div style={s.stats}>
           <div style={s.stat}>
             <div style={s.statNum}>{appliedCount}</div>
@@ -915,8 +1015,9 @@ export default function JobTrackerHome({ session }: { session: Session }) {
         </div>
       </div>
 
+      {/* ── Main content ── */}
       <div style={s.content}>
-        {/* Table Card */}
+        {/* Table card */}
         <div style={s.card}>
           <div style={s.cardHeader}>
             <span style={s.cardTitle}>Job Applications</span>
@@ -947,7 +1048,7 @@ export default function JobTrackerHome({ session }: { session: Session }) {
             </p>
           )}
           {data && (
-            <div style={s.tblWrap}>
+            <div className="tbl-scroll">
               <table style={s.table}>
                 <thead>
                   <tr>
@@ -1036,7 +1137,11 @@ export default function JobTrackerHome({ session }: { session: Session }) {
                         </button>
                       </td>
                       <td style={s.td}>
-                        <button style={s.editBtn} onClick={() => handleDelete(app)} disabled={isDeleting}>
+                        <button
+                          style={s.editBtn}
+                          onClick={() => handleDelete(app)}
+                          disabled={isDeleting}
+                        >
                           <DeleteIcon />
                         </button>
                       </td>
@@ -1049,7 +1154,7 @@ export default function JobTrackerHome({ session }: { session: Session }) {
           )}
         </div>
 
-        {/* Add Form Card */}
+        {/* Add form card */}
         <div style={s.card}>
           <div style={s.cardHeader}>
             <span style={s.cardTitle}>Add New Application</span>

@@ -1,28 +1,21 @@
 "use client";
 
-// Графики из библиотеки react-chartjs-2
 import { Bar, Doughnut, Line } from "react-chartjs-2";
 import {
   Chart as ChartJS, BarElement, CategoryScale, LinearScale,
   Tooltip, Legend, ArcElement, PointElement, LineElement, Filler,
 } from "chart.js";
 
-// Хук для работы с сессией пользователя
 import { useSession, signOut } from "next-auth/react";
-// Хук для загрузки данных с сервера
 import useSWR from "swr";
-// Ссылки Next.js
 import Link from "next/link";
-// Наши стили
 import styles from "./graph.module.css";
 
-// Регистрируем все компоненты Chart.js (обязательно)
 ChartJS.register(
   CategoryScale, LinearScale, BarElement, Tooltip, Legend,
   ArcElement, PointElement, LineElement, Filler
 );
 
-// ─── Тип данных одной заявки (должен совпадать с базой данных) ───────────────
 
 interface JobApplication {
   _id?: string;
@@ -39,11 +32,9 @@ interface JobApplication {
   };
 }
 
-// ─── Функция загрузки данных (передаём в useSWR) ─────────────────────────────
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-// ─── Цвета и названия для каждого статуса ────────────────────────────────────
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   applied:   { label: "Applied",   color: "#1559a8", bg: "#deeeff" },
@@ -53,7 +44,6 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
   rejected:  { label: "Rejected",  color: "#991b1b", bg: "#fee2e2" },
 };
 
-// ─── Маленький компонент: карточка с одной цифрой статистики ─────────────────
 
 function StatCard({ label, value, sub, accent }: {
   label: string;
@@ -72,7 +62,6 @@ function StatCard({ label, value, sub, accent }: {
   );
 }
 
-// ─── Маленький компонент: белая карточка с заголовком (обёртка для графиков) ──
 
 function CardWrap({ title, badge, children }: {
   title: string;
@@ -90,7 +79,6 @@ function CardWrap({ title, badge, children }: {
   );
 }
 
-// ─── Маленький компонент: заглушка когда нет данных для графика ───────────────
 
 function EmptyChart({ message }: { message: string }) {
   return (
@@ -104,14 +92,11 @@ function EmptyChart({ message }: { message: string }) {
   );
 }
 
-// ─── Главный компонент страницы ───────────────────────────────────────────────
 
 export default function GraphPage() {
 
-  // Получаем данные текущего пользователя и статус сессии
   const { data: session, status } = useSession();
 
-  // Строим URL для запроса заявок — только если пользователь вошёл
   const API =
     status === "authenticated" && session?.user?.email
       ? `/api/job-applications?email=${session.user.email}&provider=${
@@ -119,15 +104,12 @@ export default function GraphPage() {
         }`
       : null;
 
-  // Загружаем заявки с сервера через SWR (автоматически обновляется)
   const { data, error } = useSWR<JobApplication[]>(API, fetcher);
 
-  // Пока сессия грузится — показываем заглушку
   if (status === "loading") {
     return <div className={styles.loading}>Loading session...</div>;
   }
 
-  // Если не вошёл — предлагаем войти
   if (status === "unauthenticated") {
     return (
       <div className={styles.unauthenticated}>
@@ -137,24 +119,20 @@ export default function GraphPage() {
     );
   }
 
-  // ── Считаем статистику из загруженных данных ──────────────────────────────
 
   const applications: JobApplication[] = Array.isArray(data) ? data : [];
   const total = applications.length;
 
-  // Считаем сколько заявок с каждым статусом
   const statusCounts = Object.keys(STATUS_CONFIG).reduce((acc, key) => {
     acc[key] = applications.filter((a) => a.status?.toLowerCase() === key).length;
     return acc;
   }, {} as Record<string, number>);
 
-  // Процент офферов и собеседований от всех заявок
   const offerRate = total > 0 ? Math.round((statusCounts.offer / total) * 100) : 0;
   const interviewRate = total > 0
     ? Math.round(((statusCounts.interview + statusCounts.offer) / total) * 100)
     : 0;
 
-  // Средняя зарплата (только по тем у кого указана)
   const paidApps = applications.filter(
     (a) => a.startingPay && a.endingPay && a.startingPay > 0 && a.endingPay > 0
   );
@@ -165,7 +143,6 @@ export default function GraphPage() {
       )
     : 0;
 
-  // Количество заявок по месяцам (последние 6 месяцев) — для линейного графика
   const now = new Date();
   const monthLabels: string[] = [];
   const monthCounts: number[] = [];
@@ -180,7 +157,6 @@ export default function GraphPage() {
     );
   }
 
-  // Топ компаний по количеству заявок — для bar графика
   const companyCounts: Record<string, number> = {};
   applications.forEach((a) => {
     const n = a.company?.name ?? "Unknown";
@@ -190,16 +166,13 @@ export default function GraphPage() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 6);
 
-  // Количество заявок по типу позиции (Full-time, Part-time и т.д.)
   const typeCounts: Record<string, number> = {};
   applications.forEach((a) => {
     const t = a.positionType ?? "Other";
     typeCounts[t] = (typeCounts[t] ?? 0) + 1;
   });
 
-  // ── Данные для каждого графика ────────────────────────────────────────────
 
-  // Круговой график (Doughnut) — разбивка по статусам
   const doughnutData = {
     labels: Object.values(STATUS_CONFIG).map((s) => s.label),
     datasets: [{
@@ -211,7 +184,6 @@ export default function GraphPage() {
     }],
   };
 
-  // Линейный график — заявки по месяцам
   const lineData = {
     labels: monthLabels,
     datasets: [{
@@ -227,7 +199,6 @@ export default function GraphPage() {
     }],
   };
 
-  // Bar график — топ компаний
   const barData = {
     labels: topCompanies.map(([name]) => name.length > 16 ? name.slice(0, 14) + "…" : name),
     datasets: [{
@@ -239,7 +210,6 @@ export default function GraphPage() {
     }],
   };
 
-  // Bar график — типы позиций
   const typeBarData = {
     labels: Object.keys(typeCounts),
     datasets: [{
@@ -254,7 +224,6 @@ export default function GraphPage() {
     }],
   };
 
-  // Общие настройки для bar графиков
   const barOptions = {
     responsive: true,
     plugins: { legend: { display: false }, tooltip: { backgroundColor: "#0d3a72" } },
@@ -264,7 +233,6 @@ export default function GraphPage() {
     },
   };
 
-  // Настройки для линейного графика
   const lineOptions = {
     responsive: true,
     plugins: { legend: { display: false }, tooltip: { backgroundColor: "#0d3a72" } },
@@ -274,7 +242,6 @@ export default function GraphPage() {
     },
   };
 
-  // Настройки для кругового графика
   const doughnutOptions = {
     responsive: true,
     cutout: "68%",
@@ -284,7 +251,6 @@ export default function GraphPage() {
     },
   };
 
-  // ── Рендер страницы ───────────────────────────────────────────────────────
 
   return (
     <div className={styles.root}>
@@ -301,7 +267,6 @@ export default function GraphPage() {
         </div>
       </nav>
 
-      {/* Заголовок страницы */}
       <div className={styles.hero}>
         <div>
           <h1 className={styles.heroTitle}>Graphs &amp; Analytics</h1>
@@ -310,17 +275,13 @@ export default function GraphPage() {
         <span className={styles.heroBadge}>{total} application{total !== 1 ? "s" : ""} total</span>
       </div>
 
-      {/* Основной контент */}
       <div className={styles.content}>
 
-        {/* Сообщения об ошибке или загрузке */}
         {error && <p className={styles.errorMsg}>Failed to load data.</p>}
         {!data && !error && <p className={styles.loadingMsg}>Loading...</p>}
 
-        {/* Всё остальное показываем только когда данные загружены */}
         {data && (
           <>
-            {/* Ряд карточек со статистикой */}
             <div className={styles.statsRow}>
               <StatCard label="Total Applied" value={total} />
               <StatCard label="Interviews" value={statusCounts.interview + statusCounts.offer} sub={`${interviewRate}% of applications`} accent="#5b21b6" />
@@ -331,7 +292,6 @@ export default function GraphPage() {
               )}
             </div>
 
-            {/* Круговой график + Линейный график */}
             <div className={styles.grid2Left}>
               <CardWrap title="Status Breakdown" badge={`${total} total`}>
                 {total === 0
@@ -344,7 +304,6 @@ export default function GraphPage() {
               </CardWrap>
             </div>
 
-            {/* Bar график компаний + Bar график типов */}
             <div className={styles.grid2Right}>
               <CardWrap title="Top Companies Applied To" badge={`Top ${topCompanies.length}`}>
                 {topCompanies.length === 0 ? <EmptyChart message="No companies yet" /> : <Bar data={barData} options={barOptions} />}
@@ -354,7 +313,6 @@ export default function GraphPage() {
               </CardWrap>
             </div>
 
-            {/* Цветные тайлы по каждому статусу */}
             <CardWrap title="Status Summary">
               <div className={styles.statusGrid}>
                 {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (

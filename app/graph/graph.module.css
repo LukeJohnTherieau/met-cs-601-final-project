@@ -1,4 +1,4 @@
-/* Общий фон страницы */
+
 .root {
   font-family: 'DM Sans', sans-serif;
   background: #deeeff;
@@ -6,7 +6,6 @@
   color: #1a2a3a;
 }
 
-/* Навигационная панель сверху */
 .nav {
   background: rgba(255, 255, 255, 0.85);
   border-bottom: 1px solid rgba(100, 160, 230, 0.2);
@@ -20,7 +19,6 @@
   z-index: 100;
 }
 
-/* Логотип в навбаре */
 .navLogo {
   font-family: 'Syne', sans-serif;
   font-size: 1.25rem;
@@ -31,7 +29,6 @@
   gap: 8px;
 }
 
-/* Синяя точка рядом с логотипом */
 .navDot {
   width: 9px;
   height: 9px;
@@ -39,7 +36,6 @@
   border-radius: 50%;
 }
 
-/* Кнопки в навбаре (Sign out и Dashboard) */
 .navActions {
   display: flex;
   align-items: center;
@@ -66,7 +62,6 @@
   text-decoration: none;
 }
 
-/* Заголовок страницы */
 .hero {
   padding: 2.5rem 2rem 1.5rem;
   display: flex;
@@ -99,7 +94,6 @@
   border: 1px solid rgba(100, 160, 230, 0.3);
 }
 
-/* Основной контент */
 .content {
   padding: 0 2rem 2.5rem;
   display: flex;
@@ -107,14 +101,12 @@
   gap: 1.4rem;
 }
 
-/* Ряд с карточками статистики */
 .statsRow {
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
 }
 
-/* Одна карточка статистики (Total, Offers и т.д.) */
 .statCard {
   background: white;
   border-radius: 18px;
@@ -147,7 +139,6 @@
   color: #93b8d8;
 }
 
-/* Белая карточка с заголовком (для графиков) */
 .card {
   background: white;
   border-radius: 18px;
@@ -182,27 +173,23 @@
   padding: 1.2rem 1.4rem;
 }
 
-/* Два графика рядом (левый меньше) */
 .grid2Left {
   display: grid;
   grid-template-columns: 1fr 1.6fr;
   gap: 1.4rem;
 }
 
-/* Два графика рядом (правый меньше) */
 .grid2Right {
   display: grid;
   grid-template-columns: 1.6fr 1fr;
   gap: 1.4rem;
 }
 
-/* Размер doughnut графика */
 .doughnutWrap {
   max-width: 320px;
   margin: 0 auto;
 }
 
-/* Сетка цветных тайлов по статусам */
 .statusGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -236,7 +223,6 @@
   opacity: 0.7;
 }
 
-/* Пустой график (когда нет данных) */
 .emptyChart {
   display: flex;
   flex-direction: column;
@@ -248,7 +234,6 @@
   font-size: 0.88rem;
 }
 
-/* Экран загрузки */
 .loading {
   font-family: 'DM Sans', sans-serif;
   background: #deeeff;
@@ -259,7 +244,6 @@
   color: #1559a8;
 }
 
-/* Экран "не авторизован" */
 .unauthenticated {
   font-family: 'DM Sans', sans-serif;
   background: #deeeff;

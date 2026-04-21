@@ -433,7 +433,7 @@ export default function JobTrackerHome({ session }: { session: Session }) {
       padding: "0 2rem 2rem",
       display: "flex",
       flexDirection: "column",
-      gap: "1.5rem",
+      gap: "2rem",
     } as React.CSSProperties,
     card: {
       background: "white",
@@ -504,12 +504,12 @@ export default function JobTrackerHome({ session }: { session: Session }) {
       padding: "1.2rem 1.4rem",
       display: "flex",
       flexDirection: "column",
-      gap: "1.75rem",
+      gap: "2.5rem",
     } as React.CSSProperties,
     formGrid: {
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
-      gap: "1.5rem",
+      gap: "2rem",
     } as React.CSSProperties,
     formGroup: {
       display: "flex",

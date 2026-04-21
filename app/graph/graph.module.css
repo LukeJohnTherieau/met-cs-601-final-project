@@ -1,0 +1,284 @@
+/* Общий фон страницы */
+.root {
+  font-family: 'DM Sans', sans-serif;
+  background: #deeeff;
+  min-height: 100vh;
+  color: #1a2a3a;
+}
+
+/* Навигационная панель сверху */
+.nav {
+  background: rgba(255, 255, 255, 0.85);
+  border-bottom: 1px solid rgba(100, 160, 230, 0.2);
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 58px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+/* Логотип в навбаре */
+.navLogo {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1559a8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Синяя точка рядом с логотипом */
+.navDot {
+  width: 9px;
+  height: 9px;
+  background: #3b82f6;
+  border-radius: 50%;
+}
+
+/* Кнопки в навбаре (Sign out и Dashboard) */
+.navActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.navSignOut {
+  font-size: 0.9rem;
+  color: red;
+  padding: 6px 18px;
+  border-radius: 20px;
+  border: 1.5px solid #ff7575;
+  background: #ffd9d9;
+  cursor: pointer;
+}
+
+.navBack {
+  font-size: 0.9rem;
+  color: #1559a8;
+  padding: 6px 18px;
+  border-radius: 20px;
+  border: 1.5px solid #a0c4f0;
+  background: rgba(59, 130, 246, 0.07);
+  text-decoration: none;
+}
+
+/* Заголовок страницы */
+.hero {
+  padding: 2.5rem 2rem 1.5rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.heroTitle {
+  font-family: 'Syne', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #0d3a72;
+  margin: 0;
+}
+
+.heroSub {
+  font-size: 0.95rem;
+  color: #3a6ba0;
+  margin-top: 6px;
+}
+
+.heroBadge {
+  font-size: 0.78rem;
+  background: white;
+  color: #3a6ba0;
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(100, 160, 230, 0.3);
+}
+
+/* Основной контент */
+.content {
+  padding: 0 2rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+
+/* Ряд с карточками статистики */
+.statsRow {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Одна карточка статистики (Total, Offers и т.д.) */
+.statCard {
+  background: white;
+  border-radius: 18px;
+  border: 1px solid rgba(100, 160, 230, 0.22);
+  padding: 1.4rem 1.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 140px;
+}
+
+.statLabel {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #6b90b8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.statValue {
+  font-family: 'Syne', sans-serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.statSub {
+  font-size: 0.78rem;
+  color: #93b8d8;
+}
+
+/* Белая карточка с заголовком (для графиков) */
+.card {
+  background: white;
+  border-radius: 18px;
+  border: 1px solid rgba(100, 160, 230, 0.22);
+  overflow: hidden;
+}
+
+.cardHeader {
+  padding: 1rem 1.4rem 0.75rem;
+  border-bottom: 1px solid rgba(100, 160, 230, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cardTitle {
+  font-family: 'Syne', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0d3a72;
+}
+
+.cardBadge {
+  font-size: 0.72rem;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.cardBody {
+  padding: 1.2rem 1.4rem;
+}
+
+/* Два графика рядом (левый меньше) */
+.grid2Left {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 1.4rem;
+}
+
+/* Два графика рядом (правый меньше) */
+.grid2Right {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 1.4rem;
+}
+
+/* Размер doughnut графика */
+.doughnutWrap {
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+/* Сетка цветных тайлов по статусам */
+.statusGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.statusTile {
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.statusTileLabel {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.statusTileValue {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.statusTilePercent {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+/* Пустой график (когда нет данных) */
+.emptyChart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  gap: 8px;
+  color: #93b8d8;
+  font-size: 0.88rem;
+}
+
+/* Экран загрузки */
+.loading {
+  font-family: 'DM Sans', sans-serif;
+  background: #deeeff;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1559a8;
+}
+
+/* Экран "не авторизован" */
+.unauthenticated {
+  font-family: 'DM Sans', sans-serif;
+  background: #deeeff;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  color: #1559a8;
+}
+
+.unauthBtn {
+  padding: 8px 20px;
+  background: #1559a8;
+  color: white;
+  border-radius: 10px;
+  text-decoration: none;
+}
+
+.errorMsg { color: #991b1b; font-size: 0.875rem; }
+.loadingMsg { color: #6b90b8; font-size: 0.875rem; }

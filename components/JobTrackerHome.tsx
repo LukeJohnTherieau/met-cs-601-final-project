@@ -7,6 +7,7 @@ import { JobApplicationProps } from "@/types";
 import { Session } from "next-auth"
 import { signOut } from "next-auth/react"
 import Image from 'next/image'
+import Link from "next/link";
 
 // API helpers
 
@@ -876,7 +877,7 @@ export default function JobTrackerHome({ session }: { session: Session }) {
         </div>
         <div>
           <button style={s.navSignOutButton} onClick={() => signOut()}>Sign out</button>
-          <a style={s.navLink}>Graphs</a>
+           <Link href="/graph" style={s.navLink}>Graphs</Link>
         </div>
       </nav>
 

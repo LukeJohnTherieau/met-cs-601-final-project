@@ -504,12 +504,12 @@ export default function JobTrackerHome({ session }: { session: Session }) {
       padding: "1.2rem 1.4rem",
       display: "flex",
       flexDirection: "column",
-      gap: "1.2rem",
+      gap: "1.75rem",
     } as React.CSSProperties,
     formGrid: {
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
-      gap: "1rem",
+      gap: "1.5rem",
     } as React.CSSProperties,
     formGroup: {
       display: "flex",

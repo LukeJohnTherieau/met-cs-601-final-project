@@ -99,9 +99,7 @@ export default function GraphPage() {
 
   const API =
     status === "authenticated" && session?.user?.email
-      ? `/api/job-applications?email=${session.user.email}&provider=${
-          (session.user as { provider?: string }).provider ?? ""
-        }`
+      ? "/api/job-applications"
       : null;
 
   const { data, error } = useSWR<JobApplication[]>(API, fetcher);

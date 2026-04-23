@@ -160,7 +160,7 @@ function DeleteIcon() {
 
 // Main component
 export default function JobTrackerHome({ session }: { session: Session }) {
-  const API = `/api/job-applications?email=${session.user?.email}&provider=${session.user?.provider}`;
+  const API = "/api/job-applications";
 
   const { data, error, mutate } = useSWR<JobApplicationProps[]>(API, fetcher);
   const { trigger: createTrigger, isMutating: isCreating } = useSWRMutation(
